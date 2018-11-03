@@ -44,9 +44,7 @@ public class ActivityResult {
      * Check if interceptors specified with annotation {@link InterceptWith} are valid or not.
      */
     public void intercept(final OnInterceptResult callback) {
-        // if resultFragment can be found by tag means that Activity is restored after destroyed,
-        // so there is no need to invoke interceptor again
-        boolean allowProcess = mFragmentManager.findFragmentByTag(TAG) == null;
+        boolean isNewInstance = mFragmentManager.findFragmentByTag(TAG) == null;
 
         mResultFragment.get().setResultCallback(new OnResultCallback() {
             @Override
@@ -67,7 +65,7 @@ public class ActivityResult {
 
         // verify interceptors
         if (!mInterceptors.isEmpty()) {
-            verifyInterceptors(allowProcess, callback);
+            verifyInterceptors(isNewInstance, callback);
         }
     }
 
@@ -88,7 +86,10 @@ public class ActivityResult {
         }
     }
 
-    private void verifyInterceptors(boolean allowProcess, OnInterceptResult callback) {
+    /**
+     * new instance need to invoke process
+     */
+    private void verifyInterceptors(boolean isNewInstance, OnInterceptResult callback) {
         if (mInterceptors.isEmpty()) {
             return;
         }
@@ -100,7 +101,7 @@ public class ActivityResult {
                     callback.invoke();
                     break;
                 }
-            } else if (allowProcess){
+            } else if (isNewInstance){
                 interceptor.process(mResultFragment.get());
                 break;
             }
