@@ -27,7 +27,7 @@ public class ResultFragment extends Fragment {
         mOnResultCallback = callback;
     }
 
-    void intercept(OnResultCallback callback) {
+    void setResultCallback(OnResultCallback callback) {
         mOnResultCallback = callback;
     }
 

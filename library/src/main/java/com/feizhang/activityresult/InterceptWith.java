@@ -10,9 +10,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Inherited
 public @interface InterceptWith {
-
-    /**
-     * @return a Interceptor class array (must have a constructor without parameters inside)
-     */
     Class<? extends Interceptor>[] value();
 }

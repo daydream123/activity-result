@@ -17,16 +17,19 @@ import java.util.List;
 public class ActivityResult {
     private static final String TAG = ActivityResult.class.getSimpleName();
 
+    private FragmentManager mFragmentManager;
     private List<Interceptor> mInterceptors = new ArrayList<>();
     private Lazy<ResultFragment> mResultFragment;
 
     public ActivityResult(FragmentActivity activity) {
-        mResultFragment = getLazySingleton(activity.getSupportFragmentManager());
+        mFragmentManager = activity.getSupportFragmentManager();
+        mResultFragment = getLazySingleton();
         findInterceptors(activity);
     }
 
     public ActivityResult(Fragment fragment) {
-        mResultFragment = getLazySingleton(fragment.getChildFragmentManager());
+        mFragmentManager = fragment.getChildFragmentManager();
+        mResultFragment = getLazySingleton();
         findInterceptors(fragment);
     }
 
@@ -41,13 +44,17 @@ public class ActivityResult {
      * Check if interceptors specified with annotation {@link InterceptWith} are valid or not.
      */
     public void intercept(final OnInterceptResult callback) {
-        mResultFragment.get().intercept(new OnResultCallback() {
+        // if resultFragment can be found by tag means that Activity is restored after destroyed,
+        // so there is no need to invoke interceptor again
+        boolean allowProcess = mFragmentManager.findFragmentByTag(TAG) == null;
+
+        mResultFragment.get().setResultCallback(new OnResultCallback() {
             @Override
             public void onActivityResult(int requestCode, int resultCode, Intent data) {
                 for (Interceptor interceptor : mInterceptors) {
                     if (interceptor.getRequestCode() == requestCode) {
                         if (resultCode == Activity.RESULT_OK) {
-                            verifyInterceptors(callback);
+                            verifyInterceptors(true, callback);
                             break;
                         } else if (resultCode == Activity.RESULT_CANCELED) {
                             callback.finishSelf();
@@ -60,7 +67,7 @@ public class ActivityResult {
 
         // verify interceptors
         if (!mInterceptors.isEmpty()) {
-            verifyInterceptors(callback);
+            verifyInterceptors(allowProcess, callback);
         }
     }
 
@@ -81,7 +88,7 @@ public class ActivityResult {
         }
     }
 
-    private void verifyInterceptors(OnInterceptResult callback) {
+    private void verifyInterceptors(boolean allowProcess, OnInterceptResult callback) {
         if (mInterceptors.isEmpty()) {
             return;
         }
@@ -93,7 +100,7 @@ public class ActivityResult {
                     callback.invoke();
                     break;
                 }
-            } else {
+            } else if (allowProcess){
                 interceptor.process(mResultFragment.get());
                 break;
             }
@@ -101,14 +108,14 @@ public class ActivityResult {
     }
 
     @NonNull
-    private Lazy<ResultFragment> getLazySingleton(@NonNull final FragmentManager fragmentManager) {
+    private Lazy<ResultFragment> getLazySingleton() {
         return new Lazy<ResultFragment>() {
             private ResultFragment permissionsFragment;
 
             @Override
             public synchronized ResultFragment get() {
                 if (permissionsFragment == null) {
-                    permissionsFragment = getPermissionsFragment(fragmentManager);
+                    permissionsFragment = getResultFragment();
                     permissionsFragment.setLogging(true);
                 }
                 return permissionsFragment;
@@ -116,12 +123,12 @@ public class ActivityResult {
         };
     }
 
-    private ResultFragment getPermissionsFragment(@NonNull final FragmentManager fragmentManager) {
-        ResultFragment permissionsFragment = (ResultFragment) fragmentManager.findFragmentByTag(TAG);
+    private ResultFragment getResultFragment() {
+        ResultFragment permissionsFragment = (ResultFragment) mFragmentManager.findFragmentByTag(TAG);
         boolean isNewInstance = permissionsFragment == null;
         if (isNewInstance) {
             permissionsFragment = new ResultFragment();
-            fragmentManager
+            mFragmentManager
                     .beginTransaction()
                     .add(permissionsFragment, TAG)
                     .commitNow();
