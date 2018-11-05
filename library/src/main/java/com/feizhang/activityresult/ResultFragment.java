@@ -10,7 +10,7 @@ import android.util.Log;
  * and pass activity result to its observer via callback.
  */
 public class ResultFragment extends Fragment {
-    private static final String TAG = "PermissionsFragment";
+    private static final String TAG = "ResultFragment";
     public static final int REQUEST_CODE = 9998;
 
     private OnResultCallback mOnResultCallback;
@@ -34,7 +34,9 @@ public class ResultFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        mOnResultCallback.onActivityResult(requestCode, resultCode, data);
+        if (mOnResultCallback != null) {
+            mOnResultCallback.onActivityResult(requestCode, resultCode, data);
+        }
     }
 
     void setLogging(boolean logging) {
