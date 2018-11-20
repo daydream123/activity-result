@@ -11,6 +11,8 @@ import android.widget.Toast;
 
 import com.feizhang.activityresult.ActivityResult;
 import com.feizhang.activityresult.OnResultCallback;
+import com.feizhang.activityresult.sample.validate.Validator;
+import com.feizhang.activityresult.sample.validate.People;
 
 public class MainActivity extends AppCompatActivity {
     private ActivityResult mActivityResult;
@@ -58,7 +60,15 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+
+
+        People people = new People();
+        people.array = new People.Child[]{new People.Child("888", 10)};
+
+        boolean valid = Validator.validate(this, people);
+        if (valid) {
+            Toast.makeText(this, "haha", Toast.LENGTH_SHORT).show();
+        }
+
     }
-
-
 }
