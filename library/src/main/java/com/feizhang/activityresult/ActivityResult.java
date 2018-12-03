@@ -20,14 +20,17 @@ public class ActivityResult {
     private FragmentManager mFragmentManager;
     private List<Interceptor> mInterceptors = new ArrayList<>();
     private Lazy<ResultFragment> mResultFragment;
+    private FragmentActivity mHostActivity;
 
     public ActivityResult(FragmentActivity activity) {
+        mHostActivity = activity;
         mFragmentManager = activity.getSupportFragmentManager();
         mResultFragment = getLazySingleton();
         findInterceptors(activity);
     }
 
     public ActivityResult(Fragment fragment) {
+        mHostActivity = fragment.getActivity();
         mFragmentManager = fragment.getChildFragmentManager();
         mResultFragment = getLazySingleton();
         findInterceptors(fragment);
@@ -55,7 +58,7 @@ public class ActivityResult {
                             verifyInterceptors(true, callback);
                             break;
                         } else if (resultCode == Activity.RESULT_CANCELED) {
-                            callback.finishSelf();
+                            mHostActivity.finish();
                             break;
                         }
                     }
