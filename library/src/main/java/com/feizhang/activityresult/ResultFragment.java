@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.util.SparseArray;
 
 /**
  * It's a interceptor fragment and it is used to startActivityForResult()
@@ -11,9 +12,9 @@ import android.util.Log;
  */
 public class ResultFragment extends Fragment {
     private static final String TAG = "ResultFragment";
-    public static final int REQUEST_CODE = 9998;
 
-    private OnResultCallback mOnResultCallback;
+    private SparseArray<OnResultCallback> mResultCallbackStorage = new SparseArray<>();
+    private int mRequestCode = 200;
     private boolean mLogging;
 
     @Override
@@ -23,19 +24,20 @@ public class ResultFragment extends Fragment {
     }
 
     void startActivityForResult(Intent intent, OnResultCallback callback) {
-        startActivityForResult(intent, REQUEST_CODE);
-        mOnResultCallback = callback;
+        startActivityForResult(intent, ++mRequestCode);
+        mResultCallbackStorage.put(mRequestCode, callback);
     }
 
     void setResultCallback(OnResultCallback callback) {
-        mOnResultCallback = callback;
+        mResultCallbackStorage.put(++mRequestCode, callback);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (mOnResultCallback != null) {
-            mOnResultCallback.onActivityResult(requestCode, resultCode, data);
+        OnResultCallback callback = mResultCallbackStorage.get(requestCode);
+        if (callback != null) {
+            callback.onActivityResult(requestCode, resultCode, data);
         }
     }
 
