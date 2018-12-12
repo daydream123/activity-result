@@ -19,7 +19,7 @@ public class OrderDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_order_detail);
 
         ActivityResult result = new ActivityResult(this);
-        result.intercept(new OnInterceptResult(this) {
+        result.intercept(new OnInterceptResult() {
 
             /**
              * init data or load data from http and so on.

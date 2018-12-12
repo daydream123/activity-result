@@ -10,6 +10,7 @@ import android.support.v4.app.FragmentManager;
 import java.util.ArrayList;
 import java.util.List;
 
+
 /**
  * A helper class to provider a simplified startActivityForResult()
  * and an api to check interceptors.
@@ -20,17 +21,17 @@ public class ActivityResult {
     private FragmentManager mFragmentManager;
     private List<Interceptor> mInterceptors = new ArrayList<>();
     private Lazy<ResultFragment> mResultFragment;
-    private FragmentActivity mHostActivity;
+    private FragmentActivity mFragmentActivity;
 
     public ActivityResult(FragmentActivity activity) {
-        mHostActivity = activity;
+        mFragmentActivity = activity;
         mFragmentManager = activity.getSupportFragmentManager();
         mResultFragment = getLazySingleton();
         findInterceptors(activity);
     }
 
     public ActivityResult(Fragment fragment) {
-        mHostActivity = fragment.getActivity();
+        mFragmentActivity = fragment.getActivity();
         mFragmentManager = fragment.getChildFragmentManager();
         mResultFragment = getLazySingleton();
         findInterceptors(fragment);
@@ -46,29 +47,31 @@ public class ActivityResult {
     /**
      * Check if interceptors specified with annotation {@link InterceptWith} are valid or not.
      */
-    public void intercept(final OnInterceptResult callback) {
+    public void intercept(final OnInterceptResult onInterceptResult) {
         boolean isNewInstance = mFragmentManager.findFragmentByTag(TAG) == null;
 
-        mResultFragment.get().setResultCallback(new OnResultCallback() {
+        OnResultCallback onResultCallback = new OnResultCallback() {
             @Override
             public void onActivityResult(int requestCode, int resultCode, Intent data) {
                 for (Interceptor interceptor : mInterceptors) {
-                    if (interceptor.getRequestCode() == requestCode) {
+                    if (requestCode == interceptor.getRequestCode()){
                         if (resultCode == Activity.RESULT_OK) {
-                            verifyInterceptors(true, callback);
+                            verifyInterceptors(true, onInterceptResult, this);
                             break;
                         } else if (resultCode == Activity.RESULT_CANCELED) {
-                            mHostActivity.finish();
+                            mFragmentActivity.finish();
                             break;
                         }
                     }
                 }
             }
-        });
+        };
+
+        mResultFragment.get().setResultCallback(onResultCallback);
 
         // verify interceptors
         if (!mInterceptors.isEmpty()) {
-            verifyInterceptors(isNewInstance, callback);
+            verifyInterceptors(isNewInstance, onInterceptResult, onResultCallback);
         }
     }
 
@@ -92,7 +95,7 @@ public class ActivityResult {
     /**
      * new instance need to invoke process
      */
-    private void verifyInterceptors(boolean isNewInstance, OnInterceptResult callback) {
+    private void verifyInterceptors(boolean isNewInstance, OnInterceptResult onInterceptResult, OnResultCallback onResultCallback) {
         if (mInterceptors.isEmpty()) {
             return;
         }
@@ -100,12 +103,15 @@ public class ActivityResult {
         for (int i = 0; i < mInterceptors.size(); i++) {
             Interceptor interceptor = mInterceptors.get(i);
             if (interceptor.isValid(mResultFragment.get().getContext())) {
+                // invoke callback if all validations pass
                 if (i == mInterceptors.size() - 1) {
-                    callback.invoke();
+                    onInterceptResult.invoke();
                     break;
                 }
             } else if (isNewInstance){
-                interceptor.process(mResultFragment.get());
+                Intent intent = interceptor.getTargetIntent(mFragmentActivity);
+                int requestCode = mResultFragment.get().startActivityForResult(intent, onResultCallback);
+                interceptor.setRequestCode(requestCode);
                 break;
             }
         }
@@ -134,8 +140,8 @@ public class ActivityResult {
             permissionsFragment = new ResultFragment();
             mFragmentManager
                     .beginTransaction()
-                    .add(permissionsFragment, TAG)
-                    .commitNow();
+                    .add(permissionsFragment,TAG)
+                    .commitNowAllowingStateLoss();
         }
         return permissionsFragment;
     }

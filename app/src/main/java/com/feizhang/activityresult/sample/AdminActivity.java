@@ -19,7 +19,7 @@ public class AdminActivity extends AppCompatActivity {
         setContentView(R.layout.activity_admin_activity);
 
         ActivityResult activityResult = new ActivityResult(this);
-        activityResult.intercept(new OnInterceptResult(this) {
+        activityResult.intercept(new OnInterceptResult() {
             @Override
             public void invoke() {
                 TextView textView = findViewById(R.id.contentView);

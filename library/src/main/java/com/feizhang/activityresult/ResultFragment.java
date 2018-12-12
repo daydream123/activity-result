@@ -23,9 +23,10 @@ public class ResultFragment extends Fragment {
         setRetainInstance(true);
     }
 
-    void startActivityForResult(Intent intent, OnResultCallback callback) {
-        startActivityForResult(intent, ++mRequestCode);
-        mResultCallbackStorage.put(mRequestCode, callback);
+    int startActivityForResult(Intent intent, OnResultCallback callback) {
+        mResultCallbackStorage.put(++mRequestCode, callback);
+        startActivityForResult(intent, mRequestCode);
+        return mRequestCode;
     }
 
     void setResultCallback(OnResultCallback callback) {
