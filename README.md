@@ -1,4 +1,4 @@
-# activity_result
+# activity-result
 
 It's a new idea to implement auto login and startActivityResult() with a callback to receive activityResult.
 
